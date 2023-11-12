@@ -12,10 +12,26 @@
             max-width: 100%;
             height: auto;
         }
+        button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
     <h1>YOLO Object Detection</h1>
-    <img src="{{ url_for('video_feed') }}" alt="Object Detection">
+    <button onclick="startWebcam()">Start Webcam</button>
+    <button onclick="stopWebcam()">Stop Webcam</button>
+    <img id="webcam-feed" src="{{ url_for('video_feed') }}" alt="Object Detection">
+    <script>
+        function startWebcam() {
+            document.getElementById('webcam-feed').src = "{{ url_for('video_feed') }}";
+        }
+
+        function stopWebcam() {
+            document.getElementById('webcam-feed').src = "";
+        }
+    </script>
 </body>
 </html>
