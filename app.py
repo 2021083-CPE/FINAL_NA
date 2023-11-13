@@ -1,16 +1,23 @@
-# app.py
-
 from flask import Flask, render_template, Response
 from ultralytics import YOLO
 import cv2
+import mysql.connector
+from flask_mysqldb import MySQL
 import json
 
 app = Flask(__name__)
 model = YOLO('finalsbest.pt')
 cap = cv2.VideoCapture(0)  # Initialize cap here
 
+app.config['MYSQL_HOST'] = "localhost"
+app.config['MYSQL_USER'] = "root"
+app.config['MYSQL_PASSWORD'] = ""
+app.config['MYSQL_DB'] = "detection"
+
+mysql = MySQL(app)
+
 # Define the classes you want to detect
-target_classes = {'person', 'door', 'stair', 'chair', 'desk', 'window'}
+target_classes = {'person', 'door', 'star'}  # Assuming 'child' is one of the target classes
 
 # Define polygonal zones as a list of vertices (x, y)
 polygon_zones = {
@@ -22,6 +29,7 @@ polygon_zones = {
 # Initialize object counts
 object_counts = {class_name: 0 for class_name in target_classes}
 object_counts.update({f'{class_name}_{zone_name}': 0 for class_name in target_classes for zone_name in polygon_zones})
+
 
 def filter_results(results):
     filtered_results = []
@@ -36,6 +44,7 @@ def filter_results(results):
             label = model.names[int(class_id)]
             if label in target_classes:
                 filtered_boxes.append((box, confidence, class_id))
+
                 # Increment object count for the detected class
                 object_counts[label] += 1
 
@@ -54,6 +63,7 @@ def is_point_in_polygon(x, y, vertices):
     # This function can be implemented or you can use a library like Shapely
     pass
 
+
 def detect_objects(frame):
     results = model.track(frame, persist=True)
 
@@ -70,6 +80,7 @@ def detect_objects(frame):
             cv2.putText(frame, label, (x_min, y_min - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     return frame
+
 
 def generate_frames():
     while True:
@@ -88,13 +99,40 @@ def generate_frames():
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
                    b'Content-Type: application/json\r\n\r\n' + object_counts_json.encode() + b'\r\n')
 
+
+def insert_detection(object_type, processing_time):
+    with app.app_context():
+        cursor = mysql.connection.cursor()
+        cursor.execute(
+            "INSERT INTO detection_data (object_type, processing_time) VALUES (%s, %s)",
+            (object_type, processing_time)
+        )
+        mysql.connection.commit()
+        cursor.close()
+
+
 @app.route('/')
 def index():
     return render_template('index.html', zones=polygon_zones, classes=target_classes)
+
 
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
 if __name__ == '__main__':
+    with app.app_context():
+        # Create the detection_data table if it doesn't exist
+        with mysql.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS detection_data (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    object_type VARCHAR(255) NOT NULL,
+                    processing_time FLOAT NOT NULL,
+                    detection_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
     app.run(debug=True)
