@@ -17,7 +17,7 @@ app.config['MYSQL_DB'] = "detection"
 mysql = MySQL(app)
 
 # Define the classes you want to detect
-target_classes = {'person', 'door', 'star'}  # Assuming 'child' is one of the target classes
+target_classes = {'person', 'door', 'staircase'}  # Assuming 'child' is one of the target classes
 
 # Define polygonal zones as a list of vertices (x, y)
 polygon_zones = {
