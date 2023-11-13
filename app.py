@@ -1,17 +1,27 @@
+# app.py
+
 from flask import Flask, render_template, Response
 from ultralytics import YOLO
 import cv2
+import json
 
 app = Flask(__name__)
-
-# Load YOLO model
 model = YOLO('finalsbest.pt')
-
-# Open camera
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0)  # Initialize cap here
 
 # Define the classes you want to detect
-target_classes = {'person', 'door', 'stair'}
+target_classes = {'person', 'door', 'stair', 'chair', 'desk', 'window'}
+
+# Define polygonal zones as a list of vertices (x, y)
+polygon_zones = {
+    'zone1': [(100, 200), (150, 250), (200, 200), (150, 150)],
+    'zone2': [(300, 100), (350, 150), (400, 100), (350, 50)],
+    # Add more zones as needed
+}
+
+# Initialize object counts
+object_counts = {class_name: 0 for class_name in target_classes}
+object_counts.update({f'{class_name}_{zone_name}': 0 for class_name in target_classes for zone_name in polygon_zones})
 
 def filter_results(results):
     filtered_results = []
@@ -26,10 +36,40 @@ def filter_results(results):
             label = model.names[int(class_id)]
             if label in target_classes:
                 filtered_boxes.append((box, confidence, class_id))
+                # Increment object count for the detected class
+                object_counts[label] += 1
+
+                # Check if the object is within any polygonal zone
+                for zone_name, zone_vertices in polygon_zones.items():
+                    if is_point_in_polygon((box[0] + box[2]) / 2, (box[1] + box[3]) / 2, zone_vertices):
+                        # Increment object count for the zone
+                        object_counts[f'{label}_{zone_name}'] += 1
 
         filtered_results.append(filtered_boxes)
 
     return filtered_results
+
+def is_point_in_polygon(x, y, vertices):
+    # Check if a point is inside a polygon using the ray-casting algorithm
+    # This function can be implemented or you can use a library like Shapely
+    pass
+
+def detect_objects(frame):
+    results = model.track(frame, persist=True)
+
+    # Draw filtered results on the frame
+    for filtered_boxes in filter_results(results):
+        for box, confidence, class_id in filtered_boxes:
+            x_min, y_min, x_max, y_max = map(int, box)
+
+            # Draw bounding box
+            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+
+            # Display label and confidence
+            label = f"{model.names[int(class_id)]}: {confidence:.2f}"
+            cv2.putText(frame, label, (x_min, y_min - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    return frame
 
 def generate_frames():
     while True:
@@ -37,29 +77,20 @@ def generate_frames():
         if not success:
             break
         else:
-            results = model.track(frame, persist=True)
-            filtered_results = filter_results(results)
+            frame = detect_objects(frame)
 
-            # Draw filtered results on the frame
-            for filtered_boxes in filtered_results:
-                for box, confidence, class_id in filtered_boxes:
-                    x_min, y_min, x_max, y_max = map(int, box)
-
-                    # Draw bounding box
-                    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-
-                    # Display label and confidence
-                    label = f"{model.names[int(class_id)]}: {confidence:.2f}"
-                    cv2.putText(frame, label, (x_min, y_min - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            # Convert object_counts to JSON
+            object_counts_json = json.dumps(object_counts)
 
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+                   b'Content-Type: application/json\r\n\r\n' + object_counts_json.encode() + b'\r\n')
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', zones=polygon_zones, classes=target_classes)
 
 @app.route('/video_feed')
 def video_feed():

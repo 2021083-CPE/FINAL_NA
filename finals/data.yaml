@@ -1,0 +1,66 @@
+names:
+- Dish
+- Fish
+- Flask
+- Handle
+- Lamppost
+- Staircase
+- Train
+- a glass
+- a sofa
+- airplane
+- bag
+- ball
+- battery charger
+- bed
+- beside  table
+- bicycle
+- brid
+- bus
+- car
+- cat
+- chair
+- chicken
+- child
+- column
+- computer
+- cow
+- cup
+- desk
+- dog
+- donkey
+- door
+- glasses
+- goat
+- headphones
+- horse
+- hour
+- jug
+- monkey
+- motorcycle
+- oven
+- person
+- phone
+- pigeon
+- rabbit
+- refrigerator
+- sheep
+- table
+- tap
+- television
+- toilet
+- tree
+- wardrobe
+- wash basin
+- washing machine
+- window
+nc: 55
+roboflow:
+  license: CC BY 4.0
+  project: datset-fjfbf
+  url: https://universe.roboflow.com/hakimaharzallah-cl2yy/datset-fjfbf/dataset/2
+  version: 2
+  workspace: hakimaharzallah-cl2yy
+test: ../test/images
+train: /content/drive/MyDrive/finals/train/images
+val: /content/drive/MyDrive/finals/valid/images

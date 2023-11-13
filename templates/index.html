@@ -1,37 +1,137 @@
+<!-- index.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO Object Detection</title>
+    <title>Intellicane: Object Detection</title>
     <style>
-        body {
-            text-align: center;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-        }
-        button {
-            margin: 10px;
-            padding: 10px;
-            font-size: 16px;
-        }
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #c82c2c;
+    color: white;
+    padding: 1em;
+    font-size: 2.5em;
+    font-family: fantasy;
+}
+
+main {
+    padding: 20px;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid #333;
+    margin-top: 20px;
+    margin: 10px;
+    padding: 10px;
+    font-size: 16px;
+    background-color: #2cc840;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button {
+    margin: 10px;
+    padding: 10px;
+    font-size: 16px;
+    background-color: #2cc840;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#object-counts {
+    margin-top: 20px;
+}
+
+#object-counts-table {
+    display: table;
+    border-collapse: separate;
+    box-sizing: border-box;
+    text-indent: initial;
+    border-spacing: 2px;
+    border-color: gray;
+    margin: 0 auto; /* Center the table */
+}
+
+#object-counts-table th,
+#object-counts-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid gray;
+}
+
+#object-counts-table th {
+    background-color: #2cc840;
+    color: white;
+}
+
     </style>
 </head>
 <body>
-    <h1>YOLO Object Detection</h1>
-    <button onclick="startWebcam()">Start Webcam</button>
-    <button onclick="stopWebcam()">Stop Webcam</button>
-    <img id="webcam-feed" src="{{ url_for('video_feed') }}" alt="Object Detection">
-    <script>
-        function startWebcam() {
-            document.getElementById('webcam-feed').src = "{{ url_for('video_feed') }}";
-        }
-
-        function stopWebcam() {
-            document.getElementById('webcam-feed').src = "";
-        }
-    </script>
-</body>
-</html>
+    <header>
+        Intellicane: Object Detection
+    </header>
+    <main>
+        <button onclick="startStopWebcam()">Start/Stop Webcam</button>
+        <img id="webcam-feed" alt="Object Detection">
+        <div id="object-counts">
+            <h2>Object Counts</h2>
+            <table id="object-counts-table">
+                <!-- Object counts will be dynamically added here using JavaScript -->
+            </table>
+        </div>
+    
+        <script>
+            var isWebcamActive = false;
+    
+            // Add event listener to update object counts when receiving data
+            var eventSource = new EventSource("{{ url_for('video_feed') }}");
+            eventSource.onmessage = function (event) {
+                var data = JSON.parse(event.data);
+                updateObjectCounts(data);
+            };
+    
+            // Update object counts
+            function updateObjectCounts(counts) {
+                var countsTable = document.getElementById('object-counts-table');
+                countsTable.innerHTML = "<tr><th>Class</th><th>Count</th></tr>";
+    
+                for (var key in counts) {
+                    var class_name = key.split('_')[0]; // Extract class name from key
+                    var count = counts[key];
+    
+                    countsTable.innerHTML += `<tr><td>${class_name}</td><td>${count}</td></tr>`;
+                }
+            }
+    
+            function startStopWebcam() {
+                var webcamFeed = document.getElementById('webcam-feed');
+                if (isWebcamActive) {
+                    webcamFeed.src = "";
+                    isWebcamActive = false;
+                } else {
+                    webcamFeed.src = "{{ url_for('video_feed') }}";
+                    isWebcamActive = true;
+                }
+            }
+        </script>
+    </body>
+    </html>
