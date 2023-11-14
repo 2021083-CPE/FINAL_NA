@@ -1,90 +1,91 @@
-<!-- index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intellicane: Object Detection</title>
     <style>
-body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 0;
-}
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
 
-header {
-    background-color: #c82c2c;
-    color: white;
-    padding: 1em;
-    font-size: 2.5em;
-    font-family: fantasy;
-}
+        header {
+            background-color: #c82c2c;
+            color: white;
+            padding: 1em;
+            font-size: 2.5em;
+            font-family: fantasy;
+        }
 
-main {
-    padding: 20px;
-}
+        main {
+            padding: 20px;
+        }
 
-img {
-    max-width: 100%;
-    height: auto;
-    border: 2px solid #333;
-    margin-top: 20px;
-    margin: 10px;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #2cc840;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #333;
+            margin-top: 20px;
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #2cc840;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
-button {
-    margin: 10px;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #2cc840;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
+        button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #2cc840;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
-button:hover {
-    background-color: #45a049;
-}
+        button:hover {
+            background-color: #45a049;
+        }
 
-#object-counts {
-    margin-top: 20px;
-}
+        #object-counts {
+            margin-top: 20px;
+        }
 
-#object-counts-table {
-    display: table;
-    border-collapse: separate;
-    box-sizing: border-box;
-    text-indent: initial;
-    border-spacing: 2px;
-    border-color: gray;
-    margin: 0 auto; /* Center the table */
-}
+        #object-counts-table {
+            display: table;
+            border-collapse: separate;
+            box-sizing: border-box;
+            text-indent: initial;
+            border-spacing: 2px;
+            border-color: gray;
+            margin: 0 auto;
+            /* Center the table */
+        }
 
-#object-counts-table th,
-#object-counts-table td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid gray;
-}
+        #object-counts-table th,
+        #object-counts-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid gray;
+        }
 
-#object-counts-table th {
-    background-color: #2cc840;
-    color: white;
-}
-
+        #object-counts-table th {
+            background-color: #2cc840;
+            color: white;
+        }
     </style>
 </head>
+
 <body>
     <header>
         Intellicane: Object Detection
@@ -98,35 +99,38 @@ button:hover {
                 <!-- Object counts will be dynamically added here using JavaScript -->
             </table>
         </div>
-    
+
         <script>
+            // Add your JavaScript code here
             var isWebcamActive = false;
-    
+
             // Add event listener to update object counts when receiving data
             var eventSource = new EventSource("{{ url_for('video_feed') }}");
             eventSource.onmessage = function (event) {
                 var data = JSON.parse(event.data);
                 updateObjectCounts(data);
             };
-    
+
             // Update object counts
             function updateObjectCounts(counts) {
                 var objectCounts = document.getElementById('object-counts');
                 objectCounts.innerHTML = "<h2>Object Counts</h2>";
-    
+
                 var countsText = "";
                 for (var key in counts) {
-                    var class_name = key.split('_')[0]; // Extract class name from key
-                    var count = counts[key];
-    
-                    countsText += `${class_name}: ${count}, `;
+                    if (key === "elapsed_time") {
+                        countsText += `Detection Time: ${counts[key].toFixed(2)}ms, `;
+                    } else {
+                        var count = counts[key];
+                        countsText += `${key}: ${count}, `;
+                    }
                 }
-    
+
                 // Remove the trailing comma and display the counts
                 countsText = countsText.slice(0, -2);
                 objectCounts.innerHTML += `<p>${countsText}</p>`;
             }
-    
+
             function startStopWebcam() {
                 var webcamFeed = document.getElementById('webcam-feed');
                 if (isWebcamActive) {
@@ -138,5 +142,7 @@ button:hover {
                 }
             }
         </script>
-    </body>
-    </html>
+    </main>
+</body>
+
+</html>
